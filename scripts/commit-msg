@@ -1,11 +1,17 @@
-#!/bin/bash
+#!/usr/bin/env node
 
-if [ -f .coauthoring-with ]; then
-  echo "" >> "$1"
-  while read -r username; do
-    echo "git get-coauthor $username"
-    msg=$(git get-coauthor $username)
-    echo $msg
-    echo $msg >> "$1"
-  done < .coauthoring-with
-fi
+const fs = require('fs')
+const path = require('path')
+const {execSync} = require('child_process')
+
+const cwd = process.cwd()
+const coworkingFile = path.resolve(cwd, ".coauthoring-with")
+const commitMessage = process.argv[2]
+
+if (fs.existsSync(coworkingFile)) {
+  let message = ['']
+  for (const username of fs.readFileSync(coworkingFile, 'utf8').split('\n')) {
+    message.push(execSync(`git get-coauthor ${username}`))
+  }
+  fs.appendFileSync(commitMessage, message.join('\n'))
+}
