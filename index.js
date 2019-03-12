@@ -14,7 +14,8 @@ const errorCodes = {
   ALREADY_COWORKING: 2,
   USAGE: 3,
   EXISTING_HOOK: 4,
-  NOT_COWORKING: 5
+  NOT_COWORKING: 5,
+  NOT_IN_REPO: 6
 }
 
 function showUsage() {
@@ -22,7 +23,10 @@ function showUsage() {
   process.exit(errorCodes.USAGE)
 }
 
-if (command === 'start') {
+if (!fs.existsSync(path.resolve(__dirname, ".git"))) {
+  console.log("You aren't in a git repository")
+  process.exit(errorCodes.NOT_IN_REPO)
+} else if (command === 'start') {
   if (fs.existsSync(coworkingFile)) {
     coauthors = fs.readFileSync(path.resolve(__dirname, coworkingFile), 'UTF-8').split('\n')
     console.log(`You are already working with ${coauthors.join(',')}`)
