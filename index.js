@@ -20,7 +20,7 @@ const errorCodes = {
 }
 
 function showUsage() {
-  console.log('Usage goes here')
+  console.log('coworking-with [-h] (start|stop) <username>...')
   process.exit(errorCodes.USAGE)
 }
 
