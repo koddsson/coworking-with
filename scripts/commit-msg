@@ -1,0 +1,11 @@
+#!/usr/bin/env node
+
+if [ -f .coauthoring-with ]; then
+  echo "" >> "$1"
+  while read -r username; do
+    echo "git get-coauthor $username"
+    msg=$(git get-coauthor $username)
+    echo $msg
+    echo $msg >> "$1"
+  done < .coauthoring-with
+fi
