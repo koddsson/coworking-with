@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/bin/bash
 
 if [ -f .coauthoring-with ]; then
   echo "" >> "$1"
