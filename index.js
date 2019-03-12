@@ -44,7 +44,7 @@ if (!fs.existsSync(path.resolve(cwd, ".git"))) {
     process.exit(errorCodes.EXISTING_HOOK)
   }
 
-  fs.symlinkSync(repoHookLocation, hookScript)
+  fs.symlinkSync(hookScript, repoHookLocation)
   fs.writeFileSync(coworkingFile, coauthors.join('\n'))
   console.log('Happy coworking!')
   process.exit(errorCodes.NO_ERROR)
