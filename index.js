@@ -3,8 +3,9 @@
 const fs = require('fs')
 const path = require('path')
 
-const coworkingFile = path.resolve(__dirname, ".coauthoring-with")
-const repoHookLocation = path.resolve(__dirname, ".git/hooks/commit-msg")
+const cwd = process.cwd()
+const coworkingFile = path.resolve(cwd, ".coauthoring-with")
+const repoHookLocation = path.resolve(cwd, ".git/hooks/commit-msg")
 const hookScript = path.resolve(path.dirname(require.main.filename), "scripts/commit-msg")
 
 let [command, ...coauthors] = process.argv.slice(2)
@@ -23,12 +24,12 @@ function showUsage() {
   process.exit(errorCodes.USAGE)
 }
 
-if (!fs.existsSync(path.resolve(__dirname, ".git"))) {
+if (!fs.existsSync(path.resolve(cwd, ".git"))) {
   console.log("You aren't in a git repository")
   process.exit(errorCodes.NOT_IN_REPO)
 } else if (command === 'start') {
   if (fs.existsSync(coworkingFile)) {
-    coauthors = fs.readFileSync(path.resolve(__dirname, coworkingFile), 'UTF-8').split('\n')
+    coauthors = fs.readFileSync(coworkingFile, 'UTF-8').split('\n')
     console.log(`You are already working with ${coauthors.join(',')}`)
     process.exit(errorCodes.ALREADY_COWORKING)
   }
