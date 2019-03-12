@@ -8,10 +8,15 @@ const cwd = process.cwd()
 const coworkingFile = path.resolve(cwd, ".coauthoring-with")
 const commitMessage = process.argv[2]
 
+function getCoauthor(username) {
+  const signiture = execSync(`git log --no-merges -1 --author "${username}" --format='%an <%ae>' 2>/dev/null`)
+  return `Co-authored-by: ${signiture}`
+}
+
 if (fs.existsSync(coworkingFile)) {
   let message = ['']
   for (const username of fs.readFileSync(coworkingFile, 'utf8').split('\n')) {
-    message.push(execSync(`git get-coauthor ${username}`))
+    message.push(getCoauthor(username))
   }
   fs.appendFileSync(commitMessage, message.join('\n'))
 }
