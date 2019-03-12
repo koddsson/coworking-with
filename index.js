@@ -24,7 +24,9 @@ function showUsage() {
   process.exit(errorCodes.USAGE)
 }
 
-if (!fs.existsSync(path.resolve(cwd, ".git"))) {
+if (command === 'help' || command === '-h' || command === '--help') {
+  showUsage()
+} else if (!fs.existsSync(path.resolve(cwd, ".git"))) {
   console.log("You aren't in a git repository")
   process.exit(errorCodes.NOT_IN_REPO)
 } else if (command === 'start') {
