@@ -48,7 +48,7 @@ if (command === 'help' || command === '-h' || command === '--help') {
     process.exit(errorCodes.EXISTING_HOOK)
   }
 
-  fs.symlinkSync(hookScript, repoHookLocation)
+  fs.copyFileSync(hookScript, repoHookLocation)
   for (const coauthor of coauthors) {
     spawnSync('git', ['config', '--add', configKey, coauthor])
   }
