@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
+const {execSync, spawnSync} = require('child_process')
 const fs = require('fs')
 const path = require('path')
 
 const cwd = process.cwd()
-const coworkingFile = path.resolve(cwd, ".coauthoring-with")
 const repoHookLocation = path.resolve(cwd, ".git/hooks/commit-msg")
 const hookScript = path.resolve(path.dirname(require.main.filename), "scripts/commit-msg")
+
+const configKey = 'coworking.coauthor'
 
 let [command, ...coauthors] = process.argv.slice(2)
 
@@ -30,9 +32,9 @@ if (command === 'help' || command === '-h' || command === '--help') {
   console.log("You aren't in a git repository")
   process.exit(errorCodes.NOT_IN_REPO)
 } else if (command === 'start') {
-  if (fs.existsSync(coworkingFile)) {
-    coauthors = fs.readFileSync(coworkingFile, 'UTF-8').split('\n')
-    console.log(`You are already working with ${coauthors.join(',')}`)
+  const {stdout, status} = spawnSync('git', ['config', '--get-all', configKey], {encoding: 'utf8'})
+  if (status === 0) {
+    console.log(`You are already working with ${stdout.split('\n').filter(x => x).join(', ')}`)
     process.exit(errorCodes.ALREADY_COWORKING)
   }
 
@@ -47,16 +49,19 @@ if (command === 'help' || command === '-h' || command === '--help') {
   }
 
   fs.symlinkSync(hookScript, repoHookLocation)
-  fs.writeFileSync(coworkingFile, coauthors.join('\n'))
+  for (const coauthor of coauthors) {
+    spawnSync('git', ['config', '--add', configKey, coauthor])
+  }
   console.log('Happy coworking!')
   process.exit(errorCodes.NO_ERROR)
 } else if (command === 'stop') {
-  if (!fs.existsSync(coworkingFile)) {
+  const {status} = spawnSync('git', ['config', configKey])
+  if (status !== 0) {
     console.log("You weren't coworking!")
     process.exit(errorCodes.NOT_COWORKING)
   }
+  execSync(`git config --unset-all ${configKey}`)
   fs.unlinkSync(repoHookLocation)
-  fs.unlinkSync(coworkingFile)
   console.log('Hope you had a good time!')
   process.exit(errorCodes.NO_ERROR)
 } else {

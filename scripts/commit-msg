@@ -2,20 +2,20 @@
 
 const fs = require('fs')
 const path = require('path')
-const {execSync} = require('child_process')
+const {execSpawn, execSync} = require('child_process')
 
 const cwd = process.cwd()
-const coworkingFile = path.resolve(cwd, ".coauthoring-with")
 const commitMessage = process.argv[2]
 
 function getCoauthor(username) {
   const signiture = execSync(`git log --no-merges -1 --author "${username}" --format='%an <%ae>' 2>/dev/null`)
-  return `Co-authored-by: ${signiture}`
+  return `Co-authored-by: ${signiture.trim()}`
 }
 
-if (fs.existsSync(coworkingFile)) {
+const {stdout, status} = spawnSync('git', ['config', '--get-all', 'coworking.coauthor'], {encoding: 'utf8'})
+if (status === 0) {
   let message = ['']
-  for (const username of fs.readFileSync(coworkingFile, 'utf8').split('\n')) {
+  for (const username of stdout.split('\n').filter(x => x))
     message.push(getCoauthor(username))
   }
   fs.appendFileSync(commitMessage, message.join('\n'))
