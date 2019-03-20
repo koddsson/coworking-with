@@ -11,8 +11,7 @@ coworkers=$(git config --get-all coworking.coauthor)
 if [ $? -eq 0 ]
 then
   echo "" >> $commitMessage
-  for coworker in "$coworkers"
-  do
+  while read -r coworker; do
     echo "$(getCoauthor $coworker)" >> $commitMessage
-  done
+  done <<< $coworkers
 fi
