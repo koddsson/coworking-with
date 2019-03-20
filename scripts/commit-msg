@@ -13,5 +13,5 @@ then
   echo "" >> $commitMessage
   while read -r coworker; do
     echo "$(getCoauthor $coworker)" >> $commitMessage
-  done <<< $coworkers
+  done <<< "$coworkers"
 fi
