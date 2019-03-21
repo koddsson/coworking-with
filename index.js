@@ -10,7 +10,7 @@ const hookScript = path.resolve(path.dirname(require.main.filename), "scripts/co
 
 const configKey = 'coworking.coauthor'
 
-let [command, ...coauthors] = process.argv.slice(2)
+let [...args] = process.argv.slice(2)
 
 const errorCodes = {
   NO_ERROR: 0,
@@ -22,39 +22,16 @@ const errorCodes = {
 }
 
 function showUsage() {
-  console.log('coworking-with [-h] (start|stop) <username>...')
+  console.log('coworking-with [-h] [--stop] <username>...')
   process.exit(errorCodes.USAGE)
 }
 
-if (command === 'help' || command === '-h' || command === '--help') {
+if (args.includes('-h') || args.includes('--help')) {
   showUsage()
 } else if (!fs.existsSync(path.resolve(cwd, ".git"))) {
   console.log("You aren't in a git repository")
   process.exit(errorCodes.NOT_IN_REPO)
-} else if (command === 'start') {
-  const {stdout, status} = spawnSync('git', ['config', '--get-all', configKey], {encoding: 'utf8'})
-  if (status === 0) {
-    console.log(`You are already working with ${stdout.split('\n').filter(x => x).join(', ')}`)
-    process.exit(errorCodes.ALREADY_COWORKING)
-  }
-
-  if (coauthors.length === 0) {
-    showUsage()
-  }
-  
-  if (fs.existsSync(repoHookLocation)) {
-    // TODO: Create git hook docs.
-    console.log('You are already have a `commit-msg` git hook. See [URL] for fixes.')
-    process.exit(errorCodes.EXISTING_HOOK)
-  }
-
-  fs.copyFileSync(hookScript, repoHookLocation)
-  for (const coauthor of coauthors) {
-    spawnSync('git', ['config', '--add', configKey, coauthor])
-  }
-  console.log('Happy coworking!')
-  process.exit(errorCodes.NO_ERROR)
-} else if (command === 'stop') {
+} else if (args.includes('--stop')) {
   const {status} = spawnSync('git', ['config', configKey])
   if (status !== 0) {
     console.log("You weren't coworking!")
@@ -65,5 +42,26 @@ if (command === 'help' || command === '-h' || command === '--help') {
   console.log('Hope you had a good time!')
   process.exit(errorCodes.NO_ERROR)
 } else {
-  showUsage()
+  const {stdout, status} = spawnSync('git', ['config', '--get-all', configKey], {encoding: 'utf8'})
+  if (status === 0) {
+    console.log(`You are already working with ${stdout.split('\n').filter(x => x).join(', ')}`)
+    process.exit(errorCodes.ALREADY_COWORKING)
+  }
+
+  if (args.length === 0) {
+    showUsage()
+  }
+  
+  if (fs.existsSync(repoHookLocation)) {
+    // TODO: Create git hook docs.
+    console.log('You are already have a `commit-msg` git hook. See [URL] for fixes.')
+    process.exit(errorCodes.EXISTING_HOOK)
+  }
+
+  fs.copyFileSync(hookScript, repoHookLocation)
+  for (const coauthor of args) {
+    spawnSync('git', ['config', '--add', configKey, coauthor])
+  }
+  console.log('Happy coworking!')
+  process.exit(errorCodes.NO_ERROR)
 }
