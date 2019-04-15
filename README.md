@@ -4,13 +4,13 @@ Easily add coworking signitures to your commits.
 
 ## Usage
 
-Go into "coworking mode" by denoting the usernames of the people you are working with.
-
-Note that since we go through the git log history to find the signiture that the user you want to cowork with needs to have at least one commit into the repo you are working in.
-
 ```sh
 npx coworking-with <usernames>...
 ```
+
+The script installs a `commit-msg` hook that will append all commit messages with `Co-authored-by: USERNAME <EMAIL>` for each user you have specified. This commit trailer can be picked up by tools such as [GitHub](https://help.github.com/en/articles/creating-a-commit-with-multiple-authors).
+
+Note that since we go through the git log history to find the signiture that the user you want to cowork with needs to have at least one commit into the repo you are working in.
 
 Quit "coworking mode" with the `--stop` flag.
 
