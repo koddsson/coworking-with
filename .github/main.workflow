@@ -11,6 +11,6 @@ action "Publish" {
     "GITHUB_TOKEN",
   ]
   env = {
-    NPM_REGISTRY_URL = "https://npm.pkg.github.com"
+    NPM_REGISTRY_URL = "npm.pkg.github.com"
   }
 }
