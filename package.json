@@ -1,6 +1,6 @@
 {
   "name": "@koddsson/coworking-with",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "A toolchain to help you cowork with others using git",
   "main": "index.js",
   "bin": {
