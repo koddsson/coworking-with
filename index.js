@@ -18,7 +18,8 @@ const errorCodes = {
   USAGE: 3,
   EXISTING_HOOK: 4,
   NOT_COWORKING: 5,
-  NOT_IN_REPO: 6
+  NOT_IN_REPO: 6,
+  COAUTHOR_NO_FOUND: 7
 }
 
 function showUsage() {
@@ -51,17 +52,34 @@ if (args.includes('-h') || args.includes('--help')) {
   if (args.length === 0) {
     showUsage()
   }
-  
+
   if (fs.existsSync(repoHookLocation)) {
     // TODO: Create git hook docs.
     console.log('You are already have a `commit-msg` git hook. See [URL] for fixes.')
     process.exit(errorCodes.EXISTING_HOOK)
   }
 
-  fs.copyFileSync(hookScript, repoHookLocation)
+  const coauthorMessages = []
   for (const coauthor of args) {
-    spawnSync('git', ['config', '--add', configKey, coauthor])
+    const {stdout} = spawnSync('git', ['log', '--no-merges', '-1', '--author', coauthor, '--format=\'%an <%ae>\''], {encoding: 'utf8'})
+    if (stdout) {
+      coauthorMessages.push(`Coauthor '${coauthor}' will be attributed as ${stdout.trim()}.`)
+    } else {
+      missingAuthor = true
+      console.log(`Coauthor '${coauthor}' was not found in git log.`)
+    }
   }
-  console.log('Happy coworking!')
-  process.exit(errorCodes.NO_ERROR)
+
+  if (coauthorMessages.length === args.length) {
+    fs.copyFileSync(hookScript, repoHookLocation)
+    for (const coauthor of args) {
+      spawnSync('git', ['config', '--add', configKey, coauthor])
+    }
+    console.log(coauthorMessages.join('\n'))
+    console.log('Happy coworking!')
+    process.exit(errorCodes.NO_ERROR)
+  } else {
+    console.log('Coworking session failed to start.')
+    process.exit(errorCodes.COAUTHOR_NO_FOUND)
+  }
 }
