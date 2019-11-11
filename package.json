@@ -1,6 +1,6 @@
 {
   "name": "@koddsson/coworking-with",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "A toolchain to help you cowork with others using git",
   "main": "index.js",
   "bin": {
@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/koddsson/coworking-with/issues"
   },
-  "homepage": "https://github.com/koddsson/coworking-with#readme"
+  "homepage": "https://github.com/koddsson/coworking-with#readme",
+  "dependencies": {
+    "node-fetch": "^2.6.0"
+  }
 }
