@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/koddsson/coworking-with/issues"
   },
-  "homepage": "https://github.com/koddsson/coworking-with#readme"
+  "homepage": "https://github.com/koddsson/coworking-with#readme",
+  "dependencies": {
+    "node-fetch": "^2.6.0"
+  }
 }
