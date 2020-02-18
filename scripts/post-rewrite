@@ -2,7 +2,7 @@
 
 rewriteType=$1
 
-if [ "$rewriteType" != "rebase" ]; then
+if [ "$rewriteType" != "amend" ]; then
   exit 0
 fi
 
@@ -16,10 +16,8 @@ coworkers=$(git config --get-all coworking.coauthor)
 
 commitMessage="$commitMessage\n"
 while read -r coworker; do
-  signature=$(getCoauthor "$coworker")
-  found=$(grep "$signature" "$commitMessage" 2>/dev/null)
-  if [[ -z "$found" ]]
-  then
+  signature=$(getCoauthor $coworker)
+  if [[ $commitMessage != *"$signature"* ]]; then
     commitMessage="$commitMessage\n$signature"
   fi
 done <<< "$coworkers"
