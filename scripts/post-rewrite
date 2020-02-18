@@ -1,0 +1,27 @@
+#!/bin/bash
+
+rewriteType=$1
+
+if [ "$rewriteType" != "rebase" ]; then
+  exit 0
+fi
+
+function getCoauthor {
+  signiture=$(git log --no-merges -1 --author "$1" --format='%an <%ae>' 2>/dev/null)
+  echo "Co-authored-by: $signiture"
+}
+
+commitMessage=$(git log --format=%B -n 1 HEAD)
+coworkers=$(git config --get-all coworking.coauthor)
+
+commitMessage="$commitMessage\n"
+while read -r coworker; do
+  signature=$(getCoauthor "$coworker")
+  found=$(grep "$signature" "$commitMessage" 2>/dev/null)
+  if [[ -z "$found" ]]
+  then
+    commitMessage="$commitMessage\n$signature"
+  fi
+done <<< "$coworkers"
+
+git commit -m "$(echo -e "$commitMessage")" --amend --no-verify

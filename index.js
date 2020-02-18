@@ -6,8 +6,12 @@ const path = require('path')
 const fetch = require('node-fetch')
 
 const cwd = process.cwd()
-const repoHookLocation = path.resolve(cwd, ".git/hooks/commit-msg")
-const hookScript = path.resolve(path.dirname(require.main.filename), "scripts/commit-msg")
+
+const commitMsgHookLocation = path.resolve(cwd, ".git/hooks/commit-msg")
+const postRewriteHookLocation = path.resolve(cwd, ".git/hooks/post-rewrite")
+
+const commitMsgHookScriptLocation = path.resolve(path.dirname(require.main.filename), "scripts/commit-msg")
+const postRewriteHookScriptLocation = path.resolve(path.dirname(require.main.filename), "scripts/post-rewrite")
 
 const configKey = 'coworking.coauthor'
 
@@ -56,7 +60,8 @@ async function main() {
       process.exit(errorCodes.NOT_COWORKING)
     }
     execSync(`git config --unset-all ${configKey}`)
-    fs.unlinkSync(repoHookLocation)
+    fs.unlinkSync(commitMsgHookLocation)
+    fs.unlinkSync(postRewriteHookLocation)
     console.log('Hope you had a good time!')
     process.exit(errorCodes.NO_ERROR)
   } else {
@@ -70,9 +75,15 @@ async function main() {
       showUsage()
     }
 
-    if (fs.existsSync(repoHookLocation)) {
+    if (fs.existsSync(commitMsgHookLocation)) {
       // TODO: Create git hook docs.
       console.log('You are already have a `commit-msg` git hook. See [URL] for fixes.')
+      process.exit(errorCodes.EXISTING_HOOK)
+    }
+
+    if (fs.existsSync(postRewriteHookLocation)) {
+      // TODO: Create git hook docs.
+      console.log('You are already have a `post-rewrite` git hook. See [URL] for fixes.')
       process.exit(errorCodes.EXISTING_HOOK)
     }
 
@@ -95,7 +106,8 @@ async function main() {
     }
 
     if (coauthorMessages.length === args.length) {
-      fs.copyFileSync(hookScript, repoHookLocation)
+      fs.copyFileSync(commitMsgHookScriptLocation, commitMsgHookLocation)
+      fs.copyFileSync(postRewriteHookScriptLocation, postRewriteHookLocation)
       for (const coauthor of args) {
         spawnSync('git', ['config', '--add', configKey, coauthor])
       }
