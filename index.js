@@ -130,8 +130,8 @@ async function main() {
 
     if (coworkers.length === args.length) {
       fs.copyFileSync(hookScript, repoHookLocation);
-      for (const coauthor of coworkers) {
-        spawnSync("git", ["config", "--add", configKey, coauthor]);
+      for (const coworker of coworkers) {
+        spawnSync("git", ["config", "--add", configKey, coworker]);
       }
       console.log("Happy coworking!");
       process.exit(errorCodes.NO_ERROR);
