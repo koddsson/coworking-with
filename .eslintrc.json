@@ -1,0 +1,14 @@
+{
+  "root": true,
+  "extends": "eslint:recommended",
+  "globals": {
+    "require": true,
+    "process": true,
+    "console": true
+
+  },
+  "parserOptions": {
+    "ecmaVersion": 2020
+  }
+}
+
