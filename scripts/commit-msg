@@ -2,21 +2,15 @@
 
 commitMessage=$1
 
-function getCoauthor {
-  signiture=$(git log --no-merges -1 --author "$1" --format='%an <%ae>' 2>/dev/null)
-  echo "Co-authored-by: $signiture"
-}
-
 coworkers=$(git config --get-all coworking.coauthor)
 if [ $? -eq 0 ]
 then
   echo "" >> $commitMessage
-  while read -r coworker; do
-    signature=$(getCoauthor $coworker)
+  while read -r signature; do
     found=$(grep "$signature" "$commitMessage" 2>/dev/null)
     if [[ -z "$found" ]]
     then
-      echo "$signature" >> $commitMessage
+      echo "Co-authored-by: $signature" >> $commitMessage
     fi
   done <<< "$coworkers"
 fi
