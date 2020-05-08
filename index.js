@@ -108,7 +108,7 @@ async function main() {
           "-1",
           "--author",
           coauthor,
-          "--format='%an <%ae>'",
+          "--format=%an <%ae>",
         ],
         { encoding: "utf8" }
       );
