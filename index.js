@@ -53,6 +53,8 @@ async function getUserInfoFromGitHub(username) {
   return author;
 }
 
+const coworkers = [];
+
 async function main() {
   if (args.includes("-h") || args.includes("--help")) {
     showUsage();
@@ -97,7 +99,6 @@ async function main() {
       process.exit(errorCodes.EXISTING_HOOK);
     }
 
-    const coauthorMessages = [];
     for (const coauthor of args) {
       const { stdout } = spawnSync(
         "git",
@@ -112,9 +113,7 @@ async function main() {
         { encoding: "utf8" }
       );
       if (stdout) {
-        coauthorMessages.push(
-          `Coauthor '${coauthor}' will be attributed as ${stdout.trim()}.`
-        );
+        coworkers.push(stdout.trim());
       } else {
         console.log(
           `Coauthor '${coauthor}' was not found in git log. Trying to fetch info from GitHub..`
@@ -122,21 +121,18 @@ async function main() {
         try {
           const { name, email } = await getUserInfoFromGitHub(coauthor);
           console.log(`Found the user in GitHub!`);
-          coauthorMessages.push(
-            `Coauthor '${coauthor}' will be attributed as '${name} <${email}>'.`
-          );
+          coworkers.push(`${name} <${email}>`);
         } catch (error) {
           console.log("Failed finding the user in GitHub");
         }
       }
     }
 
-    if (coauthorMessages.length === args.length) {
+    if (coworkers.length === args.length) {
       fs.copyFileSync(hookScript, repoHookLocation);
-      for (const coauthor of args) {
+      for (const coauthor of coworkers) {
         spawnSync("git", ["config", "--add", configKey, coauthor]);
       }
-      console.log(coauthorMessages.join("\n"));
       console.log("Happy coworking!");
       process.exit(errorCodes.NO_ERROR);
     } else {
