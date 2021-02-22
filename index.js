@@ -33,24 +33,10 @@ function showUsage() {
 
 async function getUserInfoFromGitHub(username) {
   const response = await fetch(
-    `https://api.github.com/users/${username}/events/public`
-  );
+    `https://api.github.com/search/commits?q=author:${username}&user:${username}&per_page=1`
+  , {headers: {'Accept': 'application/vnd.github.cloak-preview'}});
   const json = await response.json();
-
-  // Only push events contain commits
-  const pushEvents = json.filter((event) => event.type === "PushEvent");
-  // Only commits contain user info that we need
-  const commits = pushEvents
-    .map((event) => event.payload && event.payload.commits)
-    .filter((x) => x)
-    .flat();
-
-  // Find a commit that has a author
-  const { author } = commits.find(
-    ({ author }) => author && author.name && author.email
-  );
-
-  return author;
+  return json.items[0] && json.items[0].commit.author;
 }
 
 const coworkers = [];
