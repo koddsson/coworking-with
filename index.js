@@ -33,7 +33,7 @@ function showUsage() {
 
 async function getUserInfoFromGitHub(username) {
   const response = await fetch(
-    `https://api.github.com/search/commits?q=author:${username}&per_page=1`
+    `https://api.github.com/search/commits?q=author:${username}&user:${username}&per_page=1`
   , {headers: {'Accept': 'application/vnd.github.cloak-preview'}});
   const json = await response.json();
   return json.items[0] && json.items[0].commit.author;
