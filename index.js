@@ -55,7 +55,9 @@ async function main() {
       process.exit(errorCodes.NOT_COWORKING);
     }
     execSync(`git config --unset-all ${configKey}`);
-    fs.unlinkSync(repoHookLocation);
+    if (fs.existsSync(repoHookLocation)) {
+      fs.unlinkSync(repoHookLocation);
+    }
     console.log("Hope you had a good time!");
     process.exit(errorCodes.NO_ERROR);
   } else {
