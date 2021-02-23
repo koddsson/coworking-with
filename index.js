@@ -33,8 +33,9 @@ function showUsage() {
 
 async function getUserInfoFromGitHub(username) {
   const response = await fetch(
-    `https://api.github.com/search/commits?q=author:${username}&user:${username}&per_page=1`
-  , {headers: {'Accept': 'application/vnd.github.cloak-preview'}});
+    `https://api.github.com/search/commits?q=author:${username}&user:${username}&per_page=1`,
+    { headers: { Accept: "application/vnd.github.cloak-preview" } }
+  );
   const json = await response.json();
   return json.items[0] && json.items[0].commit.author;
 }
@@ -54,7 +55,9 @@ async function main() {
       process.exit(errorCodes.NOT_COWORKING);
     }
     execSync(`git config --unset-all ${configKey}`);
-    fs.unlinkSync(repoHookLocation);
+    if (fs.existsSync(repoHookLocation)) {
+      fs.unlinkSync(repoHookLocation);
+    }
     console.log("Hope you had a good time!");
     process.exit(errorCodes.NO_ERROR);
   } else {

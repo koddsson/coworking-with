@@ -1,16 +1,32 @@
-#!/bin/bash
+#!/usr/bin/env node
 
-commitMessage=$1
+const { execSync } = require("child_process");
+const { writeFileSync, readFileSync } = require("fs");
 
-coworkers=$(git config --get-all coworking.coauthor)
-if [ $? -eq 0 ]
-then
-  echo "" >> $commitMessage
-  while read -r signature; do
-    found=$(grep "$signature" "$commitMessage" 2>/dev/null)
-    if [[ -z "$found" ]]
-    then
-      echo "Co-authored-by: $signature" >> $commitMessage
-    fi
-  done <<< "$coworkers"
-fi
+const args = process.argv.slice(2);
+const [commitMessageFile] = args;
+
+const cutStanza = "# ------------------------ >8 ------------------------";
+
+let commitMessage = readFileSync(commitMessageFile, { encoding: "utf8" });
+
+const coworkers = execSync("git config --get-all coworking.coauthor", {
+  encoding: "utf8",
+})
+  .split("\n")
+  .filter((x) => x)
+  .map((coworker) => `Co-authored-by: ${coworker}`)
+  .filter((signature) => !commitMessage.includes(signature))
+  .join("\n");
+
+if (coworkers) {
+  if (commitMessage.includes(cutStanza)) {
+    commitMessage = commitMessage.replace(
+      cutStanza,
+      `${coworkers}\n${cutStanza}`
+    );
+  } else {
+    commitMessage = `${commitMessage}\n${coworkers}`;
+  }
+  writeFileSync(commitMessageFile, commitMessage);
+}
