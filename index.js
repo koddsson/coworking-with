@@ -44,8 +44,6 @@ async function getUserInfoFromGitHub(username) {
   return json.items[0] && json.items[0].commit.author;
 }
 
-const coworkers = [];
-
 async function generateSignature(coauthor) {
   // First try to get the signature from the git log.
   const { stdout } = spawnSync(
@@ -110,12 +108,15 @@ async function main() {
       process.exit(errorCodes.EXISTING_HOOK);
     }
 
+    const signatures = [];
+
+    // Generate all the signatures
     for (const coauthor of args) {
-      coworkers.push(await generateSignature(coauthor));
+      signatures.push(await generateSignature(coauthor));
     }
 
-    // If we don't have the number of coworkers we expected, exit.
-    if (coworkers.length !== args.length) {
+    // If we don't have the number of signatures we expected, exit.
+    if (signatures.length !== args.length) {
       console.log("Coworking session failed to start.");
       process.exit(errorCodes.COAUTHOR_NO_FOUND);
     }
@@ -125,7 +126,7 @@ async function main() {
       dummyPackageJSON,
       path.resolve(cwd, ".git/hooks/package.json")
     );
-    for (const coworker of coworkers) {
+    for (const coworker of signatures) {
       spawnSync("git", ["config", "--add", configKey, coworker]);
     }
     console.log("Happy coworking!");
