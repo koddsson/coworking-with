@@ -46,6 +46,28 @@ async function getUserInfoFromGitHub(username) {
 
 const coworkers = [];
 
+async function generateSignature(coauthor) {
+  // First try to get the signature from the git log.
+  const { stdout } = spawnSync(
+    "git",
+    ["log", "--no-merges", "-1", "--author", coauthor, "--format=%an <%ae>"],
+    { encoding: "utf8" }
+  );
+  if (stdout) {
+    return stdout.trim();
+  }
+
+  // Try to get the signature from the GitHub API.
+  try {
+    const { name, email } = await getUserInfoFromGitHub(coauthor);
+    return `${name} <${email}>`;
+  } catch (error) {
+    console.log(
+      "An error occured when searching for the user in the GitHub API"
+    );
+  }
+}
+
 async function main() {
   if (args.includes("-h") || args.includes("--help")) {
     showUsage();
@@ -94,32 +116,7 @@ async function main() {
     }
 
     for (const coauthor of args) {
-      const { stdout } = spawnSync(
-        "git",
-        [
-          "log",
-          "--no-merges",
-          "-1",
-          "--author",
-          coauthor,
-          "--format=%an <%ae>",
-        ],
-        { encoding: "utf8" }
-      );
-      if (stdout) {
-        coworkers.push(stdout.trim());
-      } else {
-        console.log(
-          `Coauthor '${coauthor}' was not found in git log. Trying to fetch info from GitHub..`
-        );
-        try {
-          const { name, email } = await getUserInfoFromGitHub(coauthor);
-          console.log(`Found the user in GitHub!`);
-          coworkers.push(`${name} <${email}>`);
-        } catch (error) {
-          console.log("Failed finding the user in GitHub");
-        }
-      }
+      coworkers.push(await generateSignature(coauthor));
     }
 
     if (coworkers.length === args.length) {
