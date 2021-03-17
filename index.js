@@ -11,6 +11,10 @@ const hookScript = path.resolve(
   path.dirname(require.main.filename),
   "scripts/commit-msg"
 );
+const dummyPackageJSON = path.resolve(
+  path.dirname(require.main.filename),
+  "scripts/dummy-package.json"
+);
 
 const configKey = "coworking.coauthor";
 
@@ -57,6 +61,7 @@ async function main() {
     execSync(`git config --unset-all ${configKey}`);
     if (fs.existsSync(repoHookLocation)) {
       fs.unlinkSync(repoHookLocation);
+      fs.unlinkSync(path.resolve(cwd, ".git/hooks/package.json"));
     }
     console.log("Hope you had a good time!");
     process.exit(errorCodes.NO_ERROR);
@@ -119,6 +124,10 @@ async function main() {
 
     if (coworkers.length === args.length) {
       fs.copyFileSync(hookScript, repoHookLocation);
+      fs.copyFileSync(
+        dummyPackageJSON,
+        path.resolve(cwd, ".git/hooks/package.json")
+      );
       for (const coworker of coworkers) {
         spawnSync("git", ["config", "--add", configKey, coworker]);
       }
