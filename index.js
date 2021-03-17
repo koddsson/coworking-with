@@ -119,21 +119,22 @@ async function main() {
       coworkers.push(await generateSignature(coauthor));
     }
 
-    if (coworkers.length === args.length) {
-      fs.copyFileSync(hookScript, repoHookLocation);
-      fs.copyFileSync(
-        dummyPackageJSON,
-        path.resolve(cwd, ".git/hooks/package.json")
-      );
-      for (const coworker of coworkers) {
-        spawnSync("git", ["config", "--add", configKey, coworker]);
-      }
-      console.log("Happy coworking!");
-      process.exit(errorCodes.NO_ERROR);
-    } else {
+    // If we don't have the number of coworkers we expected, exit.
+    if (coworkers.length !== args.length) {
       console.log("Coworking session failed to start.");
       process.exit(errorCodes.COAUTHOR_NO_FOUND);
     }
+
+    fs.copyFileSync(hookScript, repoHookLocation);
+    fs.copyFileSync(
+      dummyPackageJSON,
+      path.resolve(cwd, ".git/hooks/package.json")
+    );
+    for (const coworker of coworkers) {
+      spawnSync("git", ["config", "--add", configKey, coworker]);
+    }
+    console.log("Happy coworking!");
+    process.exit(errorCodes.NO_ERROR);
   }
 }
 
