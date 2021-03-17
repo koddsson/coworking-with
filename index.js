@@ -69,12 +69,7 @@ async function generateSignature(coauthor) {
 }
 
 async function main() {
-  if (args.includes("-h") || args.includes("--help")) {
-    showUsage();
-  } else if (!fs.existsSync(path.resolve(cwd, ".git"))) {
-    console.log("You aren't in a git repository");
-    process.exit(errorCodes.NOT_IN_REPO);
-  } else if (args.includes("--stop")) {
+  if (args.includes("--stop")) {
     const { status } = spawnSync("git", ["config", configKey]);
     if (status !== 0) {
       console.log("You weren't coworking!");
@@ -136,6 +131,13 @@ async function main() {
     console.log("Happy coworking!");
     process.exit(errorCodes.NO_ERROR);
   }
+}
+
+if (args.includes("-h") || args.includes("--help")) {
+  showUsage();
+} else if (!fs.existsSync(path.resolve(cwd, ".git"))) {
+  console.log("You aren't in a git repository");
+  process.exit(errorCodes.NOT_IN_REPO);
 }
 
 main();
