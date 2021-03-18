@@ -109,12 +109,7 @@ async function main(usernames) {
   process.exit(errorCodes.NO_ERROR);
 }
 
-if (args.length === 0 || args.includes("-h") || args.includes("--help")) {
-  showUsage();
-} else if (!fs.existsSync(path.resolve(cwd, ".git"))) {
-  console.log("You aren't in a git repository");
-  process.exit(errorCodes.NOT_IN_REPO);
-} else if (args.includes("--stop")) {
+function stopCoworking() {
   const { status } = spawnSync("git", ["config", configKey]);
   if (status !== 0) {
     console.log("You weren't coworking!");
@@ -122,6 +117,15 @@ if (args.length === 0 || args.includes("-h") || args.includes("--help")) {
   }
   execSync(`git config --unset-all ${configKey}`);
   uninstallHook();
+}
+
+if (args.length === 0 || args.includes("-h") || args.includes("--help")) {
+  showUsage();
+} else if (!fs.existsSync(path.resolve(cwd, ".git"))) {
+  console.log("You aren't in a git repository");
+  process.exit(errorCodes.NOT_IN_REPO);
+} else if (args.includes("--stop")) {
+  stopCoworking();
   console.log("Hope you had a good time!");
   process.exit(errorCodes.NO_ERROR);
 }
