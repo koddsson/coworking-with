@@ -7,10 +7,6 @@ const fetch = require("node-fetch");
 
 const cwd = process.cwd();
 const repoHookLocation = path.resolve(cwd, ".git/hooks/commit-msg");
-const hookScript = path.resolve(
-  path.dirname(require.main.filename),
-  "scripts/commit-msg"
-);
 const dummyPackageJSON = path.resolve(
   path.dirname(require.main.filename),
   "scripts/dummy-package.json"
@@ -62,6 +58,10 @@ async function generateSignature(coauthor) {
 }
 
 function installHook() {
+  const hookScript = path.resolve(
+    path.dirname(require.main.filename),
+    "scripts/commit-msg"
+  );
   fs.copyFileSync(hookScript, repoHookLocation);
   fs.copyFileSync(
     dummyPackageJSON,
