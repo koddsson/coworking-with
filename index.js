@@ -66,54 +66,30 @@ async function generateSignature(coauthor) {
   }
 }
 
-async function main() {
-  const { stdout, status } = spawnSync(
-    "git",
-    ["config", "--get-all", configKey],
-    { encoding: "utf8" }
-  );
-  if (status === 0) {
-    console.log(
-      `You are already working with ${stdout
-        .split("\n")
-        .filter((x) => x)
-        .join(", ")}`
-    );
-    process.exit(errorCodes.ALREADY_COWORKING);
-  }
-
-  if (args.length === 0) {
-    showUsage();
-  }
-
-  if (fs.existsSync(repoHookLocation)) {
-    // TODO: Create git hook docs.
-    console.log(
-      "You are already have a `commit-msg` git hook. See [URL] for fixes."
-    );
-    process.exit(errorCodes.EXISTING_HOOK);
-  }
-
+async function main(usernames) {
   const signatures = [];
 
   // Generate all the signatures
-  for (const coauthor of args) {
-    signatures.push(await generateSignature(coauthor));
+  for (const username of usernames) {
+    signatures.push(await generateSignature(username));
   }
 
   // If we don't have the number of signatures we expected, exit.
-  if (signatures.length !== args.length) {
+  if (signatures.length !== usernames.length) {
     console.log("Coworking session failed to start.");
     process.exit(errorCodes.COAUTHOR_NO_FOUND);
   }
 
+  // Install the necessary files.
   fs.copyFileSync(hookScript, repoHookLocation);
   fs.copyFileSync(
     dummyPackageJSON,
     path.resolve(cwd, ".git/hooks/package.json")
   );
-  for (const coworker of signatures) {
-    spawnSync("git", ["config", "--add", configKey, coworker]);
+
+  // Add all the signatures to the git config
+  for (const signature of signatures) {
+    spawnSync("git", ["config", "--add", configKey, signature]);
   }
   console.log("Happy coworking!");
   process.exit(errorCodes.NO_ERROR);
@@ -139,4 +115,29 @@ if (args.includes("-h") || args.includes("--help")) {
   process.exit(errorCodes.NO_ERROR);
 }
 
-main();
+const { stdout, status } = spawnSync(
+  "git",
+  ["config", "--get-all", configKey],
+  { encoding: "utf8" }
+);
+
+if (status === 0) {
+  console.log(
+    `You are already working with ${stdout
+      .split("\n")
+      .filter((x) => x)
+      .join(", ")}`
+  );
+  process.exit(errorCodes.ALREADY_COWORKING);
+}
+
+if (args.length === 0) {
+  showUsage();
+}
+
+if (fs.existsSync(repoHookLocation)) {
+  console.log("Refusing to overwrite a existing commit-msg git hook.");
+  process.exit(errorCodes.EXISTING_HOOK);
+}
+
+main(args);
