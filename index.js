@@ -85,7 +85,7 @@ function uninstallHook() {
   }
 }
 
-async function main(usernames) {
+async function startCoworking(usernames) {
   const signatures = [];
 
   // Generate all the signatures
@@ -151,4 +151,4 @@ if (fs.existsSync(repoHookLocation)) {
   process.exit(errorCodes.EXISTING_HOOK);
 }
 
-main(args);
+startCoworking(args);
