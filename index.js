@@ -66,6 +66,25 @@ async function generateSignature(coauthor) {
   }
 }
 
+function installHook() {
+  fs.copyFileSync(hookScript, repoHookLocation);
+  fs.copyFileSync(
+    dummyPackageJSON,
+    path.resolve(cwd, ".git/hooks/package.json")
+  );
+}
+
+function uninstallHook() {
+  if (fs.existsSync(repoHookLocation)) {
+    fs.unlinkSync(repoHookLocation);
+  }
+
+  const packageLocation = path.resolve(cwd, ".git/hooks/package.json");
+  if (fs.existsSync(packageLocation)) {
+    fs.unlinkSync(packageLocation);
+  }
+}
+
 async function main(usernames) {
   const signatures = [];
 
@@ -80,12 +99,7 @@ async function main(usernames) {
     process.exit(errorCodes.COAUTHOR_NO_FOUND);
   }
 
-  // Install the necessary files.
-  fs.copyFileSync(hookScript, repoHookLocation);
-  fs.copyFileSync(
-    dummyPackageJSON,
-    path.resolve(cwd, ".git/hooks/package.json")
-  );
+  installHook();
 
   // Add all the signatures to the git config
   for (const signature of signatures) {
@@ -107,10 +121,7 @@ if (args.includes("-h") || args.includes("--help")) {
     process.exit(errorCodes.NOT_COWORKING);
   }
   execSync(`git config --unset-all ${configKey}`);
-  if (fs.existsSync(repoHookLocation)) {
-    fs.unlinkSync(repoHookLocation);
-    fs.unlinkSync(path.resolve(cwd, ".git/hooks/package.json"));
-  }
+  uninstallHook();
   console.log("Hope you had a good time!");
   process.exit(errorCodes.NO_ERROR);
 }
