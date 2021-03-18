@@ -30,11 +30,6 @@ const errorCodes = {
   COAUTHOR_NO_FOUND: 7,
 };
 
-function showUsage() {
-  console.log("coworking-with [-h] [--stop] <username>...");
-  process.exit(errorCodes.USAGE);
-}
-
 async function getUserInfoFromGitHub(username) {
   const response = await fetch(
     `https://api.github.com/search/commits?q=author:${username}&user:${username}&per_page=1`,
@@ -120,7 +115,8 @@ function stopCoworking() {
 }
 
 if (args.length === 0 || args.includes("-h") || args.includes("--help")) {
-  showUsage();
+  console.log("coworking-with [-h] [--stop] <username>...");
+  process.exit(errorCodes.USAGE);
 } else if (!fs.existsSync(path.resolve(cwd, ".git"))) {
   console.log("You aren't in a git repository");
   process.exit(errorCodes.NOT_IN_REPO);
