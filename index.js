@@ -67,71 +67,56 @@ async function generateSignature(coauthor) {
 }
 
 async function main() {
-  if (args.includes("--stop")) {
-    const { status } = spawnSync("git", ["config", configKey]);
-    if (status !== 0) {
-      console.log("You weren't coworking!");
-      process.exit(errorCodes.NOT_COWORKING);
-    }
-    execSync(`git config --unset-all ${configKey}`);
-    if (fs.existsSync(repoHookLocation)) {
-      fs.unlinkSync(repoHookLocation);
-      fs.unlinkSync(path.resolve(cwd, ".git/hooks/package.json"));
-    }
-    console.log("Hope you had a good time!");
-    process.exit(errorCodes.NO_ERROR);
-  } else {
-    const { stdout, status } = spawnSync(
-      "git",
-      ["config", "--get-all", configKey],
-      { encoding: "utf8" }
+  const { stdout, status } = spawnSync(
+    "git",
+    ["config", "--get-all", configKey],
+    { encoding: "utf8" }
+  );
+  if (status === 0) {
+    console.log(
+      `You are already working with ${stdout
+        .split("\n")
+        .filter((x) => x)
+        .join(", ")}`
     );
-    if (status === 0) {
-      console.log(
-        `You are already working with ${stdout
-          .split("\n")
-          .filter((x) => x)
-          .join(", ")}`
-      );
-      process.exit(errorCodes.ALREADY_COWORKING);
-    }
-
-    if (args.length === 0) {
-      showUsage();
-    }
-
-    if (fs.existsSync(repoHookLocation)) {
-      // TODO: Create git hook docs.
-      console.log(
-        "You are already have a `commit-msg` git hook. See [URL] for fixes."
-      );
-      process.exit(errorCodes.EXISTING_HOOK);
-    }
-
-    const signatures = [];
-
-    // Generate all the signatures
-    for (const coauthor of args) {
-      signatures.push(await generateSignature(coauthor));
-    }
-
-    // If we don't have the number of signatures we expected, exit.
-    if (signatures.length !== args.length) {
-      console.log("Coworking session failed to start.");
-      process.exit(errorCodes.COAUTHOR_NO_FOUND);
-    }
-
-    fs.copyFileSync(hookScript, repoHookLocation);
-    fs.copyFileSync(
-      dummyPackageJSON,
-      path.resolve(cwd, ".git/hooks/package.json")
-    );
-    for (const coworker of signatures) {
-      spawnSync("git", ["config", "--add", configKey, coworker]);
-    }
-    console.log("Happy coworking!");
-    process.exit(errorCodes.NO_ERROR);
+    process.exit(errorCodes.ALREADY_COWORKING);
   }
+
+  if (args.length === 0) {
+    showUsage();
+  }
+
+  if (fs.existsSync(repoHookLocation)) {
+    // TODO: Create git hook docs.
+    console.log(
+      "You are already have a `commit-msg` git hook. See [URL] for fixes."
+    );
+    process.exit(errorCodes.EXISTING_HOOK);
+  }
+
+  const signatures = [];
+
+  // Generate all the signatures
+  for (const coauthor of args) {
+    signatures.push(await generateSignature(coauthor));
+  }
+
+  // If we don't have the number of signatures we expected, exit.
+  if (signatures.length !== args.length) {
+    console.log("Coworking session failed to start.");
+    process.exit(errorCodes.COAUTHOR_NO_FOUND);
+  }
+
+  fs.copyFileSync(hookScript, repoHookLocation);
+  fs.copyFileSync(
+    dummyPackageJSON,
+    path.resolve(cwd, ".git/hooks/package.json")
+  );
+  for (const coworker of signatures) {
+    spawnSync("git", ["config", "--add", configKey, coworker]);
+  }
+  console.log("Happy coworking!");
+  process.exit(errorCodes.NO_ERROR);
 }
 
 if (args.includes("-h") || args.includes("--help")) {
@@ -139,6 +124,19 @@ if (args.includes("-h") || args.includes("--help")) {
 } else if (!fs.existsSync(path.resolve(cwd, ".git"))) {
   console.log("You aren't in a git repository");
   process.exit(errorCodes.NOT_IN_REPO);
+} else if (args.includes("--stop")) {
+  const { status } = spawnSync("git", ["config", configKey]);
+  if (status !== 0) {
+    console.log("You weren't coworking!");
+    process.exit(errorCodes.NOT_COWORKING);
+  }
+  execSync(`git config --unset-all ${configKey}`);
+  if (fs.existsSync(repoHookLocation)) {
+    fs.unlinkSync(repoHookLocation);
+    fs.unlinkSync(path.resolve(cwd, ".git/hooks/package.json"));
+  }
+  console.log("Hope you had a good time!");
+  process.exit(errorCodes.NO_ERROR);
 }
 
 main();
