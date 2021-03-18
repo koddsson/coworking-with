@@ -109,7 +109,7 @@ async function main(usernames) {
   process.exit(errorCodes.NO_ERROR);
 }
 
-if (args.includes("-h") || args.includes("--help")) {
+if (args.length === 0 || args.includes("-h") || args.includes("--help")) {
   showUsage();
 } else if (!fs.existsSync(path.resolve(cwd, ".git"))) {
   console.log("You aren't in a git repository");
@@ -140,10 +140,6 @@ if (status === 0) {
       .join(", ")}`
   );
   process.exit(errorCodes.ALREADY_COWORKING);
-}
-
-if (args.length === 0) {
-  showUsage();
 }
 
 if (fs.existsSync(repoHookLocation)) {
