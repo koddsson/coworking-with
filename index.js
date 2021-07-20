@@ -7,10 +7,6 @@ const fetch = require("node-fetch");
 
 const cwd = process.cwd();
 const repoHookLocation = path.resolve(cwd, ".git/hooks/commit-msg");
-const hookScript = path.resolve(
-  path.dirname(require.main.filename),
-  "scripts/commit-msg"
-);
 const dummyPackageJSON = path.resolve(
   path.dirname(require.main.filename),
   "scripts/dummy-package.json"
@@ -30,11 +26,6 @@ const errorCodes = {
   COAUTHOR_NO_FOUND: 7,
 };
 
-function showUsage() {
-  console.log("coworking-with [-h] [--stop] <username>...");
-  process.exit(errorCodes.USAGE);
-}
-
 async function getUserInfoFromGitHub(username) {
   const response = await fetch(
     `https://api.github.com/search/commits?q=author:${username}&user:${username}&per_page=1`,
@@ -44,100 +35,116 @@ async function getUserInfoFromGitHub(username) {
   return json.items[0] && json.items[0].commit.author;
 }
 
-const coworkers = [];
+async function generateSignature(coauthor) {
+  // First try to get the signature from the git log.
+  const { stdout } = spawnSync(
+    "git",
+    ["log", "--no-merges", "-1", "--author", coauthor, "--format=%an <%ae>"],
+    { encoding: "utf8" }
+  );
+  if (stdout) {
+    return stdout.trim();
+  }
 
-async function main() {
-  if (args.includes("-h") || args.includes("--help")) {
-    showUsage();
-  } else if (!fs.existsSync(path.resolve(cwd, ".git"))) {
-    console.log("You aren't in a git repository");
-    process.exit(errorCodes.NOT_IN_REPO);
-  } else if (args.includes("--stop")) {
-    const { status } = spawnSync("git", ["config", configKey]);
-    if (status !== 0) {
-      console.log("You weren't coworking!");
-      process.exit(errorCodes.NOT_COWORKING);
-    }
-    execSync(`git config --unset-all ${configKey}`);
-    if (fs.existsSync(repoHookLocation)) {
-      fs.unlinkSync(repoHookLocation);
-      fs.unlinkSync(path.resolve(cwd, ".git/hooks/package.json"));
-    }
-    console.log("Hope you had a good time!");
-    process.exit(errorCodes.NO_ERROR);
-  } else {
-    const { stdout, status } = spawnSync(
-      "git",
-      ["config", "--get-all", configKey],
-      { encoding: "utf8" }
+  // Try to get the signature from the GitHub API.
+  try {
+    const { name, email } = await getUserInfoFromGitHub(coauthor);
+    return `${name} <${email}>`;
+  } catch (error) {
+    console.log(
+      "An error occured when searching for the user in the GitHub API"
     );
-    if (status === 0) {
-      console.log(
-        `You are already working with ${stdout
-          .split("\n")
-          .filter((x) => x)
-          .join(", ")}`
-      );
-      process.exit(errorCodes.ALREADY_COWORKING);
-    }
-
-    if (args.length === 0) {
-      showUsage();
-    }
-
-    if (fs.existsSync(repoHookLocation)) {
-      // TODO: Create git hook docs.
-      console.log(
-        "You are already have a `commit-msg` git hook. See [URL] for fixes."
-      );
-      process.exit(errorCodes.EXISTING_HOOK);
-    }
-
-    for (const coauthor of args) {
-      const { stdout } = spawnSync(
-        "git",
-        [
-          "log",
-          "--no-merges",
-          "-1",
-          "--author",
-          coauthor,
-          "--format=%an <%ae>",
-        ],
-        { encoding: "utf8" }
-      );
-      if (stdout) {
-        coworkers.push(stdout.trim());
-      } else {
-        console.log(
-          `Coauthor '${coauthor}' was not found in git log. Trying to fetch info from GitHub..`
-        );
-        try {
-          const { name, email } = await getUserInfoFromGitHub(coauthor);
-          console.log(`Found the user in GitHub!`);
-          coworkers.push(`${name} <${email}>`);
-        } catch (error) {
-          console.log("Failed finding the user in GitHub");
-        }
-      }
-    }
-
-    if (coworkers.length === args.length) {
-      fs.copyFileSync(hookScript, repoHookLocation);
-      fs.copyFileSync(
-        dummyPackageJSON,
-        path.resolve(cwd, ".git/hooks/package.json")
-      );
-      for (const coworker of coworkers) {
-        spawnSync("git", ["config", "--add", configKey, coworker]);
-      }
-      console.log("Happy coworking!");
-      process.exit(errorCodes.NO_ERROR);
-    } else {
-      console.log("Coworking session failed to start.");
-      process.exit(errorCodes.COAUTHOR_NO_FOUND);
-    }
   }
 }
 
-main();
+function installHook() {
+  const hookScript = path.resolve(
+    path.dirname(require.main.filename),
+    "scripts/commit-msg"
+  );
+  fs.copyFileSync(hookScript, repoHookLocation);
+  fs.copyFileSync(
+    dummyPackageJSON,
+    path.resolve(cwd, ".git/hooks/package.json")
+  );
+}
+
+function uninstallHook() {
+  if (fs.existsSync(repoHookLocation)) {
+    fs.unlinkSync(repoHookLocation);
+  }
+
+  const packageLocation = path.resolve(cwd, ".git/hooks/package.json");
+  if (fs.existsSync(packageLocation)) {
+    fs.unlinkSync(packageLocation);
+  }
+}
+
+async function startCoworking(usernames) {
+  const signatures = [];
+
+  // Generate all the signatures
+  for (const username of usernames) {
+    signatures.push(await generateSignature(username));
+  }
+
+  // If we don't have the number of signatures we expected, exit.
+  if (signatures.length !== usernames.length) {
+    console.log("Coworking session failed to start.");
+    process.exit(errorCodes.COAUTHOR_NO_FOUND);
+  }
+
+  installHook();
+
+  // Add all the signatures to the git config
+  for (const signature of signatures) {
+    spawnSync("git", ["config", "--add", configKey, signature]);
+  }
+  console.log("Happy coworking!");
+  process.exit(errorCodes.NO_ERROR);
+}
+
+function stopCoworking() {
+  const { status } = spawnSync("git", ["config", configKey]);
+  if (status !== 0) {
+    console.log("You weren't coworking!");
+    process.exit(errorCodes.NOT_COWORKING);
+  }
+  execSync(`git config --unset-all ${configKey}`);
+  uninstallHook();
+}
+
+if (args.length === 0 || args.includes("-h") || args.includes("--help")) {
+  console.log("coworking-with [-h] [--stop] <username>...");
+  process.exit(errorCodes.USAGE);
+} else if (!fs.existsSync(path.resolve(cwd, ".git"))) {
+  console.log("You aren't in a git repository");
+  process.exit(errorCodes.NOT_IN_REPO);
+} else if (args.includes("--stop")) {
+  stopCoworking();
+  console.log("Hope you had a good time!");
+  process.exit(errorCodes.NO_ERROR);
+}
+
+const { stdout, status } = spawnSync(
+  "git",
+  ["config", "--get-all", configKey],
+  { encoding: "utf8" }
+);
+
+if (status === 0) {
+  console.log(
+    `You are already working with ${stdout
+      .split("\n")
+      .filter((x) => x)
+      .join(", ")}`
+  );
+  process.exit(errorCodes.ALREADY_COWORKING);
+}
+
+if (fs.existsSync(repoHookLocation)) {
+  console.log("Refusing to overwrite a existing commit-msg git hook.");
+  process.exit(errorCodes.EXISTING_HOOK);
+}
+
+startCoworking(args);
