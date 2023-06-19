@@ -5,8 +5,6 @@ const fs = require("fs");
 const path = require("path");
 const fetch = require("node-fetch");
 
-const cwd = process.cwd();
-const repoHookLocation = path.resolve(cwd, ".git/hooks/commit-msg");
 const hookScript = path.resolve(
   path.dirname(require.main.filename),
   "scripts/commit-msg"
@@ -44,14 +42,25 @@ async function getUserInfoFromGitHub(username) {
   return json.items[0] && json.items[0].commit.author;
 }
 
+function getGitRoot() {
+  const { stdout, status } = spawnSync("git", ["rev-parse", "--show-toplevel"]);
+  if (status === 0) {
+    return stdout.toString().trim()
+  }
+}
+
 const coworkers = [];
 
 async function main() {
-  if (args.includes("-h") || args.includes("--help")) {
-    showUsage();
-  } else if (!fs.existsSync(path.resolve(cwd, ".git"))) {
+  const gitRoot = getGitRoot();
+  if (!gitRoot) {
     console.log("You aren't in a git repository");
     process.exit(errorCodes.NOT_IN_REPO);
+  }
+  const repoHookLocation = path.resolve(gitRoot, ".git/hooks/commit-msg");
+
+  if (args.includes("-h") || args.includes("--help")) {
+    showUsage();
   } else if (args.includes("--stop")) {
     const { status } = spawnSync("git", ["config", configKey]);
     if (status !== 0) {
@@ -61,7 +70,7 @@ async function main() {
     execSync(`git config --unset-all ${configKey}`);
     if (fs.existsSync(repoHookLocation)) {
       fs.unlinkSync(repoHookLocation);
-      fs.unlinkSync(path.resolve(cwd, ".git/hooks/package.json"));
+      fs.unlinkSync(path.resolve(gitRoot, ".git/hooks/package.json"));
     }
     console.log("Hope you had a good time!");
     process.exit(errorCodes.NO_ERROR);
@@ -126,7 +135,7 @@ async function main() {
       fs.copyFileSync(hookScript, repoHookLocation);
       fs.copyFileSync(
         dummyPackageJSON,
-        path.resolve(cwd, ".git/hooks/package.json")
+        path.resolve(gitRoot, ".git/hooks/package.json")
       );
       for (const coworker of coworkers) {
         spawnSync("git", ["config", "--add", configKey, coworker]);
