@@ -9,6 +9,9 @@
   "scripts": {
     "test": "eslint ."
   },
+  "engines": {
+    "node": ">=18"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/koddsson/coworking-with.git"
