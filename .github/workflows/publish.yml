@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - jsr
 
 jobs:
   publish:
