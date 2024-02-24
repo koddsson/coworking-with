@@ -1,5 +1,5 @@
 {
   "name": "@koddsson/co-authored-by",
   "version": "0.4.2",
-  "exports": "index.js"
+  "exports": "./index.js"
 }
